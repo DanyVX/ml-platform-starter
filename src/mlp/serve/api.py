@@ -77,7 +77,9 @@ async def correlation_id(
         rid = uuid.uuid4().hex
     request.state.request_id = rid
     routing_key = request.headers.get('X-Routing-Key', '')
-    request.state.routing_key = routing_key if routing_key.isascii() and 0 < len(routing_key) <= 128 else rid
+    request.state.routing_key = (
+        routing_key if routing_key.isascii() and 0 < len(routing_key) <= 128 else rid
+    )
     response = await call_next(request)
     response.headers["X-Request-ID"] = rid
     return response
