@@ -1,94 +1,130 @@
-# ml-platform-starter
+# ML Platform Starter
 
-A CPU-first, single-node **MLOps reference platform** being built milestone-by-milestone to demonstrate reproducible training, governance, safe serving, and drift monitoring. The model is deliberately simple; the platform is the product.
+**Single-node MLOps reference platform:** deterministic synthetic data → MLflow model registry → FastAPI model serving → sticky canary/shadow routing → Prometheus/Grafana → drift detection → statistical promotion gate.
 
 [![CI](https://github.com/DanyVX/ml-platform-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/DanyVX/ml-platform-starter/actions/workflows/ci.yml)
 
-**Demo:** TBD (full platform not yet implemented). M1 exposes a deterministic dataset-build and integrity-check CLI.
+**Status:** engineering reference implementation, not production-ready. No real customer dataset or biometric material. No model result or latency claim without a generated evidence file.
+
+## Demo
+
+Reproduce locally with Docker Compose. An animated GIF has not been captured yet.
 
 ## Key results
 
-| Evidence | Result | Reproduction |
+| Measurement | Result | How to reproduce |
 |---|---|---|
-| PR-AUC / ECE / worst slice | TBD (not yet measured) | M2 training + `eval/` |
-| Serving p50 / p95 latency | TBD (not yet measured) | M3 load benchmark |
-| PSI / KS drift detection | TBD (not yet measured) | M5 drift injection harness |
-| Drift false-alarm rate | TBD (not yet measured) | M5 drift injection harness |
-| Canary rollback demonstration | TBD (not yet implemented) | M4 demo |
-| Promotion accept / reject | TBD (not yet implemented) | M6 promotion gate |
-
-No measured values are claimed until scripts produce committed JSON results with hardware and commit metadata.
+| Synthetic classifier PR-AUC, calibration and worst-slice | TBD (not yet measured and committed) | `python -m mlp train`, inspect MLflow artifacts |
+| Serving p95 latency | TBD (not yet measured and committed) | `make demo`, Prometheus histogram |
+| Drift detection and false alarm rate | TBD (not yet measured and committed) | `python eval/drift_injection.py` |
+| Paired bootstrap promote accept/reject | Demonstrated with deterministic unit fixtures, not live model win | `python -m pytest tests/test_promotion.py` |
+| Hot reload under concurrency | TBD (not yet benchmarked) | Integration race harness planned |
 
 ## Why this exists
 
-The purpose is to show platform engineering rather than a notebook. The eventual system will train and register a deliberately small model, load it by MLflow registry alias, route challenger traffic safely, detect shift in production inputs and scores, and promote only models that pass measured regression gates.
-
-**M1 contains a synthetic data layer, not a functioning trained or serving platform.** Training, registry, serving and observability remain future milestones.
+A realistic portfolio project about the *lifecycle and safe operations of models*. Logistic regression is intentionally modest. The interesting questions are: which data produced a model, when should it be promoted, can serving fail safely, and is drift detection evidence-based rather than decorative?
 
 ## Architecture
 
 ```mermaid
 flowchart TD
-  A[Synthetic data + validation - M1] --> B[CPU training + evaluation - M2]
-  B --> C[MLflow registry + model aliases - M2]
-  C --> D[FastAPI hot reload - M3]
-  D --> E[Canary/shadow routing - M4]
-  E --> F[Metrics + drift - M5]
-  F --> G[Prometheus + Grafana - M7]
-  B --> H[CI promotion gate - M6]
-  H --> C
+  DATA[Synthetic generator + Pandera] --> SPLIT[Leakage-safe splits + SHA256 manifests]
+  SPLIT --> TRAIN[Sklearn training + 3-fold CV]
+  TRAIN --> TRACK[MLflow runs / model registry]
+  TRACK --> ALIAS[Champion / challenger aliases]
+  ALIAS --> SERVE[FastAPI + atomic reload / cache]
+  SERVE --> CANARY[Sticky canary + shadow]
+  CANARY --> METRICS[Prometheus]
+  METRICS --> UI[Grafana]
+  TRAIN --> GATE[Paired-bootstrap promotion gate]
+  GATE --> ALIAS
+  SERVE --> DRIFT[PSI + KS drift job and delayed labels]
 ```
 
-## Quickstart (M0)
+## Quickstart
 
-Requires Python 3.11 or 3.12 and network access for the initial dependency installation. Clone the repo, then:
+Python 3.11 or 3.12, Docker Desktop or Docker Engine with Docker Compose v2, and enough disk space for image pulls are required. **Never expose the ports publicly.**
 
 ```bash
+git clone https://github.com/DanyVX/ml-platform-starter.git
+cd ml-platform-starter
 python -m pip install -e ".[dev]"
-python -m mlp doctor --json
-python -m mlp config
-python -m mlp data-build --output-dir data/synthetic --rows 200
-python -m mlp data-verify --data-dir data/synthetic
 python -m pytest
+make demo
 ```
 
-If uv is installed, `uv sync --extra dev` creates a local environment. Use `uv run mlp doctor --json` afterward. A committed transitive lockfile is pending until dependency resolution can run in a networked environment.
+On Windows, replace Make targets with `python scripts/tasks.py <task>`. For a Compose-only run:
 
-On Linux/macOS where make exists, `make lint`, `make typecheck`, and `make test` run the M0 gates. On Windows, use `python scripts/tasks.py <task>` instead. Tasks that do not exist yet (`bench`, `docker-build`) fail explicitly rather than pretending to succeed.
+```bash
+docker compose -f deploy/docker-compose.yml up -d --build
+docker compose -f deploy/docker-compose.yml exec -T api python -m mlp train
+```
+
+Local services:
+
+| Service | Address | Purpose |
+|---|---|---|
+| API | http://127.0.0.1:8000/docs | Validated predictions |
+| MLflow | http://127.0.0.1:5000 | Experiments and registry |
+| Prometheus | http://127.0.0.1:9090 | Bounded route/status metrics |
+| Grafana | http://127.0.0.1:3000 | Provisioned dashboard |
+
+Grafana's demo admin credentials must be changed outside a local trusted environment.
 
 ## Usage examples
 
 ```bash
-python -m mlp doctor
-MLP_TINY_ROWS=128 python -m mlp config
+python -m mlp doctor --json
+python -m mlp data-build --rows 200 --output-dir data/synthetic
+python -m mlp data-verify --data-dir data/synthetic
+python -m mlp train
+python eval/drift_injection.py
+python scripts/promote.py
+python scripts/reproduce.py 1
 ```
 
-The CLI reports probe status without printing a configured git identity, environment variable values, or credentials. At M1, model inference, MLflow registration, and `make up` are not implemented.
+After a champion is registered and service readiness is healthy:
+
+```bash
+curl -X POST http://127.0.0.1:8000/v1/predict \
+  -H "Content-Type: application/json" \
+  -d '{"records":{"f_0":0.1,"f_1":0.1,"f_2":0.1,"f_3":0.1,"f_4":0.1,"f_5":0.1,"channel":"web"}}'
+```
 
 ## Configuration
 
-All current settings are defined in `src/mlp/common/config.py`; see `.env.example`. Invalid values fail fast. Configure JSON logging with `MLP_LOG_JSON=true`. Do not place real biometric/ID data, API keys, or model artifacts in this repository.
+See `.env.example`. Important variables: `MLP_TRACKING_URI`, `MLP_CACHE_DIR`, `MLP_RELOAD_INTERVAL`, `MLP_CANARY_PERCENT`, `MLP_SHADOW_MODE` and timeout/seed settings. Unknown train/serve channels are rejected, rather than silently mapped. Batch limit: 128 records.
 
 ## Reproducing benchmarks
 
-There are no M0/M1 model or system benchmark results. Starting in M2, every result must originate from a documented script, include software/hardware/commit metadata, and be saved under `results/*.json`. See [RESULTS](docs/RESULTS.md).
+`python eval/drift_injection.py` generates `results/drift_injection.json` with measured detector rates, repeat count, seed, commit, Python/library versions and machine information. Model metrics are logged to MLflow with a data manifest. No numbers are to be copied from papers or invented; when a result file is absent we say TBD.
 
 ## Design decisions
 
-See the dated [decision log](docs/DESIGN.md) for the synthetic pilot dataset, single-node scope, MLflow alias strategy, platform boundaries, and rejected alternatives.
+See [DESIGN](docs/DESIGN.md): synthetic data avoids external consent/license risk, MLflow aliases permit controlled promotion/rollback, hand-coded PSI/KS is inspectable, and a paired bootstrap prevents promoting noise.
 
 ## Limitations
 
-The pilot dataset is synthetic and **cannot support claims about real-world predictive value or fairness**. This build does not yet train, register, serve, monitor, deploy, or authenticate models. See [LIMITATIONS](docs/LIMITATIONS.md), [DATA](DATA.md), and [MODEL CARD](MODEL_CARD.md).
+Single-node only, no network authentication by default, internal cache uses trusted pickle/joblib, not a public hosting template. Caching validates SHA-256 but does not cryptographically authenticate an attacker-controlled cache. Forecasting fairness from synthetic categories would be meaningless. MLflow registry is local/ephemeral in the hosted promotion workflow. See [LIMITATIONS](docs/LIMITATIONS.md).
 
 ## Roadmap
 
-M0 (setup, merged) → M1 (synthetic validated data) → M2 (training + registry) → M3 (serving + reload) → M4 (canary/shadow) → M5 (drift monitoring) → M6 (promotion CI) → M7 (Compose demo) → M8 (release and evidence). Each milestone gets its own reviewed PR.
+- [x] M0: engineering scaffold
+- [x] M1: deterministic validated data
+- [ ] M2: MLflow training and measured calibration artifacts
+- [ ] M3: registry serving, race testing and safe cache
+- [ ] M4: canary/shadow and rollback
+- [ ] M5: drift and delayed-label monitoring
+- [ ] M6: promotion gate and documented accept/reject
+- [ ] M7: one-command Compose and monitoring
+- [ ] M8: full end-to-end verified release with v0.1.0 and demo GIF
+
+Items M2-M8 must only be checked after their merged PR and CI evidence confirms acceptance.
 
 ## License
 
-MIT. See [LICENSE](LICENSE). Dependency and model terms are tracked before incorporation.
+MIT for project source. See [LICENSE](LICENSE), [DATA](DATA.md), and [MODEL_CARD](MODEL_CARD.md). Upstream licenses must be reviewed and updated for each dependency.
 
-## Acknowledgements and citations
+## Acknowledgements
 
-Planned components: scikit-learn, MLflow, FastAPI, Prometheus, Grafana. Their licenses and API contracts must be verified at the milestone where each becomes a dependency. No external dataset or pretrained model is included in M1.
+MLflow, scikit-learn, Pandera, FastAPI, Prometheus and Grafana open-source maintainers.

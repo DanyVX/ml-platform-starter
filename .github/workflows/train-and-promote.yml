@@ -1,0 +1,36 @@
+name: Train and promote
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mlp-single-registry-promotion
+  cancel-in-progress: false
+
+jobs:
+  train-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -e .
+      - name: Register challenger with local throwaway SQLite
+        run: python -m mlp train
+      - name: Evaluate paired gate
+        run: python scripts/promote.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: promotion-decision
+          path: results/promotion_decision.json
+
+# NOTE: registry state on this hosted runner is ephemeral. The workflow is
+# a gate demo, NOT a deployment to a shared production registry.
