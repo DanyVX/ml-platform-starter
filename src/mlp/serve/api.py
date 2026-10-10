@@ -6,6 +6,7 @@ import asyncio
 import logging
 import os
 import uuid
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -43,7 +44,7 @@ async def _poll_alias() -> None:
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await asyncio.to_thread(manager.reload)
     if GUARD.percent or SHADOW:
         await asyncio.to_thread(CHALLENGER.reload, "challenger")
@@ -62,7 +63,9 @@ app = FastAPI(title="ML Platform Starter", version="0.1.0", lifespan=lifespan)
 
 
 @app.middleware("http")
-async def correlation_id(request: Request, call_next):
+async def correlation_id(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
     rid = request.headers.get("X-Request-ID", "")
     if not rid.isascii() or len(rid) > 64 or not rid:
         rid = uuid.uuid4().hex

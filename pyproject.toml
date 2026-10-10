@@ -58,5 +58,5 @@ markers = [
 ]
 
 [[tool.mypy.overrides]]
-module = ["numpy.*", "pandas.*", "sklearn.*", "pandera.*", "mlflow.*"]
+module = ["numpy.*", "pandas.*", "sklearn.*", "pandera.*", "mlflow.*", "scipy.*", "joblib.*"]
 ignore_missing_imports = true

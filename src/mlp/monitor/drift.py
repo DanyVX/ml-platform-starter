@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import asdict, dataclass
+from typing import Any, cast
 
 import numpy as np
 from scipy.stats import ks_2samp
@@ -18,13 +19,13 @@ class DriftMetric:
     reference_count: int
     observed_count: int
 
-    def as_dict(self) -> dict:
+    def as_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
 def _clean(values: np.ndarray) -> np.ndarray:
     array = np.asarray(values, dtype=float).reshape(-1)
-    return array[np.isfinite(array)]
+    return cast(np.ndarray, array[np.isfinite(array)])
 
 
 def population_stability_index(
