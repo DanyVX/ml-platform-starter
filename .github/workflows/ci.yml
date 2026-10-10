@@ -60,4 +60,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-# Docker checks are introduced with the Dockerfile in M3/M7.
+# Full Docker integration is verified separately by compose-smoke.yml.
