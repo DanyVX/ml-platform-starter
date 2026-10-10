@@ -8,7 +8,7 @@
 
 ## Demo
 
-Reproduce locally with Docker Compose. An animated GIF has not been captured yet.
+A real GitHub Actions Docker demonstration has passed: [end-to-end run](https://github.com/DanyVX/ml-platform-starter/actions/runs/38043405526). It trains a model, registers and promotes it, waits for the serving API, calls inference, runs synthetic drift evaluation, and tears down the services. An animated GIF has not been captured.
 
 ## Key results
 
@@ -58,6 +58,7 @@ On Windows, replace Make targets with `python scripts/tasks.py <task>`. For a Co
 ```bash
 docker compose -f deploy/docker-compose.yml up -d --build
 docker compose -f deploy/docker-compose.yml exec -T api python -m mlp train
+docker compose -f deploy/docker-compose.yml exec -T api python scripts/promote.py
 ```
 
 Local services:
@@ -111,15 +112,15 @@ Single-node only, no network authentication by default, internal cache uses trus
 
 - [x] M0: engineering scaffold
 - [x] M1: deterministic validated data
-- [ ] M2: MLflow training and measured calibration artifacts
-- [ ] M3: registry serving, race testing and safe cache
-- [ ] M4: canary/shadow and rollback
-- [ ] M5: drift and delayed-label monitoring
-- [ ] M6: promotion gate and documented accept/reject
-- [ ] M7: one-command Compose and monitoring
-- [ ] M8: full end-to-end verified release with v0.1.0 and demo GIF
+- [x] M2: CPU model training, MLflow registration, tracked evaluation artifacts
+- [x] M3: registry-backed serving and cache/hot-reload implementation (stress test pending)
+- [x] M4: sticky canary/shadow routing and local rollback guard implementation
+- [x] M5: PSI/KS drift logic and opt-in delayed-label monitoring implementation
+- [x] M6: paired-bootstrap promotion logic and synthetic gate tests
+- [x] M7: one-command four-service Compose demo and provisioned monitoring
+- [ ] M8: full release evidence, stress benchmark, demo GIF, and v0.1.0 tag
 
-Items M2-M8 must only be checked after their merged PR and CI evidence confirms acceptance.
+The implementation for M2-M7 was merged in [PR #9](https://github.com/DanyVX/ml-platform-starter/pull/9) and passed Python 3.11/3.12 CI and a Docker end-to-end smoke test. The checked items indicate core implementation, not production readiness or completion of the universal Definition of Done. See the remaining evidence gaps in [LIMITATIONS](docs/LIMITATIONS.md).
 
 ## License
 
