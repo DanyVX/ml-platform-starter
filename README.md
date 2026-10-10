@@ -4,7 +4,7 @@ A CPU-first, single-node **MLOps reference platform** being built milestone-by-m
 
 [![CI](https://github.com/DanyVX/ml-platform-starter/actions/workflows/ci.yml/badge.svg)](https://github.com/DanyVX/ml-platform-starter/actions/workflows/ci.yml)
 
-**Demo:** TBD (not yet implemented). M0 currently has an environment-diagnostics CLI.
+**Demo:** TBD (full platform not yet implemented). M1 exposes a deterministic dataset-build and integrity-check CLI.
 
 ## Key results
 
@@ -23,7 +23,7 @@ No measured values are claimed until scripts produce committed JSON results with
 
 The purpose is to show platform engineering rather than a notebook. The eventual system will train and register a deliberately small model, load it by MLflow registry alias, route challenger traffic safely, detect shift in production inputs and scores, and promote only models that pass measured regression gates.
 
-**M0 is a scaffold, not a functioning ML platform.** Later milestones are planned, not completed.
+**M1 contains a synthetic data layer, not a functioning trained or serving platform.** Training, registry, serving and observability remain future milestones.
 
 ## Architecture
 
@@ -47,6 +47,8 @@ Requires Python 3.11 or 3.12 and network access for the initial dependency insta
 python -m pip install -e ".[dev]"
 python -m mlp doctor --json
 python -m mlp config
+python -m mlp data-build --output-dir data/synthetic --rows 200
+python -m mlp data-verify --data-dir data/synthetic
 python -m pytest
 ```
 
@@ -61,7 +63,7 @@ python -m mlp doctor
 MLP_TINY_ROWS=128 python -m mlp config
 ```
 
-The CLI reports probe status without printing a configured git identity, environment variable values, or credentials. In current M0, model inference, MLflow registration, and `make up` are not implemented.
+The CLI reports probe status without printing a configured git identity, environment variable values, or credentials. At M1, model inference, MLflow registration, and `make up` are not implemented.
 
 ## Configuration
 
@@ -69,7 +71,7 @@ All current settings are defined in `src/mlp/common/config.py`; see `.env.exampl
 
 ## Reproducing benchmarks
 
-There are no M0 model or system benchmark results. Starting in M2, every result must originate from a documented script, include software/hardware/commit metadata, and be saved under `results/*.json`. See [RESULTS](docs/RESULTS.md).
+There are no M0/M1 model or system benchmark results. Starting in M2, every result must originate from a documented script, include software/hardware/commit metadata, and be saved under `results/*.json`. See [RESULTS](docs/RESULTS.md).
 
 ## Design decisions
 
@@ -81,7 +83,7 @@ The pilot dataset is synthetic and **cannot support claims about real-world pred
 
 ## Roadmap
 
-M0 (setup) → M1 (validated data) → M2 (training + registry) → M3 (serving + reload) → M4 (canary/shadow) → M5 (drift monitoring) → M6 (promotion CI) → M7 (Compose demo) → M8 (release and evidence). Each milestone gets its own reviewed PR.
+M0 (setup, merged) → M1 (synthetic validated data) → M2 (training + registry) → M3 (serving + reload) → M4 (canary/shadow) → M5 (drift monitoring) → M6 (promotion CI) → M7 (Compose demo) → M8 (release and evidence). Each milestone gets its own reviewed PR.
 
 ## License
 
@@ -89,4 +91,4 @@ MIT. See [LICENSE](LICENSE). Dependency and model terms are tracked before incor
 
 ## Acknowledgements and citations
 
-Planned components: scikit-learn, MLflow, FastAPI, Prometheus, Grafana. Their licenses and API contracts must be verified at the milestone where each becomes a dependency. No external dataset or pretrained model is included in M0.
+Planned components: scikit-learn, MLflow, FastAPI, Prometheus, Grafana. Their licenses and API contracts must be verified at the milestone where each becomes a dependency. No external dataset or pretrained model is included in M1.
