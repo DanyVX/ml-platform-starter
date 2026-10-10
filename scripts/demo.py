@@ -7,7 +7,6 @@ import time
 
 import httpx
 
-
 COMPOSE = ["docker", "compose", "-f", "deploy/docker-compose.yml"]
 
 
@@ -35,8 +34,10 @@ def main() -> None:
         )
         result.raise_for_status()
     command("exec", "-T", "api", "python", "eval/drift_injection.py")
-    print("Demo running. MLflow localhost:5000, API localhost:8000, "
-          "Prometheus localhost:9090, Grafana localhost:3000")
+    print(
+        "Demo running. MLflow localhost:5000, API localhost:8000, "
+        "Prometheus localhost:9090, Grafana localhost:3000"
+    )
 
 
 if __name__ == "__main__":

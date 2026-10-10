@@ -34,7 +34,9 @@ def main() -> None:
         client.set_registered_model_alias(MODEL_NAME, "champion", challenger.version)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(
-            json.dumps({"accepted": True, "reason": "first deployment, no prior champion"}, indent=2),
+            json.dumps(
+                {"accepted": True, "reason": "first deployment, no prior champion"}, indent=2
+            ),
             encoding="utf-8",
         )
         return

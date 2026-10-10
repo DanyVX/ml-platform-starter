@@ -37,17 +37,21 @@ def paired_bootstrap(
         raise ValueError("Both classes must be present")
     if not (np.isfinite(champion).all() and np.isfinite(challenger).all()):
         raise ValueError("Nonfinite predictions cannot be evaluated")
-    observed = float(average_precision_score(labels, challenger) - average_precision_score(labels, champion))
+    observed = float(
+        average_precision_score(labels, challenger) - average_precision_score(labels, champion)
+    )
     rng = np.random.default_rng(seed)
     outcomes: list[float] = []
     for _ in range(repeats):
         idx = rng.integers(0, len(labels), size=len(labels))
         if len(np.unique(labels[idx])) < 2:
             continue
-        outcomes.append(float(
-            average_precision_score(labels[idx], challenger[idx])
-            - average_precision_score(labels[idx], champion[idx])
-        ))
+        outcomes.append(
+            float(
+                average_precision_score(labels[idx], challenger[idx])
+                - average_precision_score(labels[idx], champion[idx])
+            )
+        )
     if len(outcomes) < repeats * 0.8:
         raise ValueError("Bootstrap samples repeatedly lacked one target class")
     lo, hi = np.quantile(outcomes, [0.025, 0.975])

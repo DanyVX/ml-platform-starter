@@ -11,7 +11,6 @@ from time import perf_counter
 from typing import Any
 
 import joblib
-
 import mlflow
 import mlflow.sklearn
 import numpy as np
@@ -90,7 +89,9 @@ def train_and_register(settings: AppSettings | None = None) -> dict[str, Any]:
         latency_samples.append((perf_counter() - started) * 1000)
     mlflow.set_tracking_uri(os.getenv("MLP_TRACKING_URI", "sqlite:///mlflow.db"))
     mlflow.set_experiment("synthetic-churn-pilot")
-    with mlflow.start_run(tags={"commit": str(manifest["git_commit"]), "data_sha256": manifest["data_version"]}) as run:
+    with mlflow.start_run(
+        tags={"commit": str(manifest["git_commit"]), "data_sha256": manifest["data_version"]}
+    ) as run:
         mlflow.log_params({"seed": cfg.random_seed, "rows": cfg.tiny_rows, **grid.best_params_})
         mlflow.log_metrics({f"val_{k}": v for k, v in validation.items()})
         mlflow.log_metrics({f"test_{k}": v for k, v in final.items()})
@@ -123,9 +124,7 @@ def train_and_register(settings: AppSettings | None = None) -> dict[str, Any]:
                 "model_bytes": model_bytes,
                 "smoke": bool(np.isfinite(test_scores).all()),
             }
-            (Path(temporary) / "holdout.json").write_text(
-                json.dumps(holdout), encoding="utf-8"
-            )
+            (Path(temporary) / "holdout.json").write_text(json.dumps(holdout), encoding="utf-8")
             mlflow.log_artifact(str(Path(temporary) / "holdout.json"))
             (Path(temporary) / "MODEL_CARD.md").write_text(
                 "# Synthetic model card\n\nFor synthetic MLOps infrastructure testing only. "

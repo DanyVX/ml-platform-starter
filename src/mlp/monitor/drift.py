@@ -27,7 +27,9 @@ def _clean(values: np.ndarray) -> np.ndarray:
     return array[np.isfinite(array)]
 
 
-def population_stability_index(reference: np.ndarray, observed: np.ndarray, bins: int = 10) -> float:
+def population_stability_index(
+    reference: np.ndarray, observed: np.ndarray, bins: int = 10
+) -> float:
     reference = _clean(reference)
     observed = _clean(observed)
     if len(reference) < 2 or len(observed) < 2 or bins < 2:
@@ -50,14 +52,19 @@ def categorical_psi(reference: list[str], observed: list[str]) -> float:
     categories = set(reference) | set(observed)
     if len(categories) > 100:
         raise ValueError("Too many categorical levels (maximum 100)")
-    return float(sum(
-        ((observed.count(category) / len(observed)) - (reference.count(category) / len(reference)))
-        * math.log(
-            max(observed.count(category) / len(observed), 1e-6)
-            / max(reference.count(category) / len(reference), 1e-6)
+    return float(
+        sum(
+            (
+                (observed.count(category) / len(observed))
+                - (reference.count(category) / len(reference))
+            )
+            * math.log(
+                max(observed.count(category) / len(observed), 1e-6)
+                / max(reference.count(category) / len(reference), 1e-6)
+            )
+            for category in categories
         )
-        for category in categories
-    ))
+    )
 
 
 def detect_numeric(
@@ -76,4 +83,6 @@ def detect_numeric(
     psi = population_stability_index(base, window)
     result = ks_2samp(base, window, method="auto")
     status = "drift" if psi > psi_threshold and float(result.pvalue) < alpha else "stable"
-    return DriftMetric(status, psi, float(result.statistic), float(result.pvalue), len(base), len(window))
+    return DriftMetric(
+        status, psi, float(result.statistic), float(result.pvalue), len(base), len(window)
+    )

@@ -27,8 +27,12 @@ class Observation:
 
 class CanaryGuard:
     def __init__(
-        self, percent: float = 0.0, *, min_samples: int = 20,
-        max_error_rate: float = 0.05, max_p95_ms: float = 500.0,
+        self,
+        percent: float = 0.0,
+        *,
+        min_samples: int = 20,
+        max_error_rate: float = 0.05,
+        max_p95_ms: float = 500.0,
         max_divergence: float = 0.35,
     ) -> None:
         choose_route("validate", percent)

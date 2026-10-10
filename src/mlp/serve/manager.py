@@ -68,8 +68,11 @@ class ModelManager:
         # Only a locally produced trusted artifact must ever be placed in this directory.
         model = joblib.load(path)
         return Loaded(
-            model, str(metadata["version"]), str(metadata["data_version"]),
-            str(metadata["training_commit"]), "degraded",
+            model,
+            str(metadata["version"]),
+            str(metadata["data_version"]),
+            str(metadata["training_commit"]),
+            "degraded",
         )
 
     def reload(self, alias: str = "champion") -> bool:

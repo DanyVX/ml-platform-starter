@@ -27,9 +27,9 @@ def test_predictions_single_batch_and_schema(monkeypatch) -> None:
     import numpy as np
 
     fake = Mock()
-    fake.predict_proba.side_effect = lambda frame: np.column_stack([
-        np.repeat(0.4, len(frame)), np.repeat(0.6, len(frame))
-    ])
+    fake.predict_proba.side_effect = lambda frame: np.column_stack(
+        [np.repeat(0.4, len(frame)), np.repeat(0.6, len(frame))]
+    )
     loaded = Loaded(fake, "1", "test-sha", "test-commit", "ready")
     monkeypatch.setattr(api.manager, "reload", lambda *args: True)
     monkeypatch.setattr(api.manager, "_current", loaded)

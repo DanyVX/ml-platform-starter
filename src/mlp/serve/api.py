@@ -20,9 +20,9 @@ from mlp.data.schema import validate_frame
 from mlp.serve.manager import CACHE, ModelManager, manager
 from mlp.serve.routing import CanaryGuard, Observation
 
-CHALLENGER = ModelManager(cache=CACHE / 'challenger')
-GUARD = CanaryGuard(percent=float(os.getenv('MLP_CANARY_PERCENT', '0')))
-SHADOW = os.getenv('MLP_SHADOW_MODE', 'false').lower() == 'true'
+CHALLENGER = ModelManager(cache=CACHE / "challenger")
+GUARD = CanaryGuard(percent=float(os.getenv("MLP_CANARY_PERCENT", "0")))
+SHADOW = os.getenv("MLP_SHADOW_MODE", "false").lower() == "true"
 
 LOG = logging.getLogger("mlp.serve")
 REQUESTS = Counter("mlp_prediction_requests_total", "Prediction requests", ["route", "status"])
@@ -39,14 +39,14 @@ async def _poll_alias() -> None:
         await asyncio.sleep(interval)
         await asyncio.to_thread(manager.reload)
         if GUARD.percent or SHADOW:
-            await asyncio.to_thread(CHALLENGER.reload, 'challenger')
+            await asyncio.to_thread(CHALLENGER.reload, "challenger")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await asyncio.to_thread(manager.reload)
     if GUARD.percent or SHADOW:
-        await asyncio.to_thread(CHALLENGER.reload, 'challenger')
+        await asyncio.to_thread(CHALLENGER.reload, "challenger")
     task = asyncio.create_task(_poll_alias())
     try:
         yield
@@ -107,7 +107,7 @@ async def predict(payload: PredictRequest, request: Request) -> dict[str, Any]:
     champion = manager.snapshot()
     route = GUARD.route(request.state.request_id)
     challenger = CHALLENGER.snapshot()
-    loaded = challenger if route == 'challenger' and challenger is not None else champion
+    loaded = challenger if route == "challenger" and challenger is not None else champion
     if loaded is None:
         raise HTTPException(503, "No verified model is loaded")
     try:

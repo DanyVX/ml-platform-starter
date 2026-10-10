@@ -10,9 +10,12 @@ from mlp.registry.promotion import evaluate_promotion, paired_bootstrap
 
 def _kwargs() -> dict:
     return dict(
-        champion_worst_slice=0.5, challenger_worst_slice=0.6,
-        challenger_ece=0.03, challenger_p95_ms=20,
-        challenger_bytes=2000, serving_smoke_passed=True,
+        champion_worst_slice=0.5,
+        challenger_worst_slice=0.6,
+        challenger_ece=0.03,
+        challenger_p95_ms=20,
+        challenger_bytes=2000,
+        serving_smoke_passed=True,
         repeats=120,
     )
 

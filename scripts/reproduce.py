@@ -30,12 +30,17 @@ def main() -> None:
     expected = version.tags.get("data_version")
     if actual != expected:
         raise SystemExit("Reproduction failed: generated dataset hash mismatch")
-    print(json.dumps({
-        "model_version": args.model_version,
-        "data_version": actual,
-        "matched": True,
-        "scope": "data recreation only; retraining equivalence is not yet asserted",
-    }, indent=2))
+    print(
+        json.dumps(
+            {
+                "model_version": args.model_version,
+                "data_version": actual,
+                "matched": True,
+                "scope": "data recreation only; retraining equivalence is not yet asserted",
+            },
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":

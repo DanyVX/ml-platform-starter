@@ -52,7 +52,5 @@ class FeedbackWindow:
             return {
                 "status": "measured",
                 "labeled": len(ids),
-                "pr_auc": float(average_precision_score(
-                    positives, [self._scores[i] for i in ids]
-                )),
+                "pr_auc": float(average_precision_score(positives, [self._scores[i] for i in ids])),
             }
