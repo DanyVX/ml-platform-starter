@@ -17,6 +17,7 @@ def command(*args: str) -> None:
 def main() -> None:
     command("up", "-d", "--build")
     command("exec", "-T", "api", "python", "-m", "mlp", "train")
+    command("exec", "-T", "api", "python", "scripts/promote.py")
     for _ in range(60):
         try:
             response = httpx.get("http://127.0.0.1:8000/readyz", timeout=2)

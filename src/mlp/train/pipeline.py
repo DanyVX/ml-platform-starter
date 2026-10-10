@@ -155,8 +155,4 @@ def train_and_register(settings: AppSettings | None = None) -> dict[str, Any]:
         MODEL_NAME, version, "training_commit", str(manifest["git_commit"])
     )
     client.set_registered_model_alias(MODEL_NAME, "challenger", version)
-    try:
-        client.get_model_version_by_alias(MODEL_NAME, "champion")
-    except mlflow.exceptions.MlflowException:
-        client.set_registered_model_alias(MODEL_NAME, "champion", version)
     return {**report, "version": version, "model_name": MODEL_NAME}

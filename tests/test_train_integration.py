@@ -15,4 +15,4 @@ def test_train_and_register(tmp_path, monkeypatch) -> None:
     report = train_and_register(AppSettings(_env_file=None, tiny_rows=200))
     assert report["test"]["pr_auc"] > 0
     assert report["version"]
-    assert MlflowClient().get_model_version_by_alias(MODEL_NAME, "champion").version
+    assert MlflowClient().get_model_version_by_alias(MODEL_NAME, "challenger").version
