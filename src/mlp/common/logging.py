@@ -5,7 +5,7 @@ from __future__ import annotations
 import contextvars
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 request_id: contextvars.ContextVar[str | None] = contextvars.ContextVar(
     "request_id", default=None
@@ -17,7 +17,7 @@ class JSONFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         payload: dict[str, str] = {
-            "timestamp": datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat(),
+            "timestamp": datetime.fromtimestamp(record.created, tz=UTC).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "event": record.getMessage(),
