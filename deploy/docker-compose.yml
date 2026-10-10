@@ -15,6 +15,8 @@ services:
       - --serve-artifacts
       - --artifacts-destination
       - /app/artifacts/mlflow
+      - --allowed-hosts
+      - mlflow:*,localhost:*,127.0.0.1:*
     volumes:
       - tracking:/app/artifacts
     ports:
@@ -24,6 +26,11 @@ services:
       interval: 15s
       timeout: 8s
       retries: 12
+    mem_limit: 2500m
+    logging:
+      options:
+        max-size: '10m'
+        max-file: '3'
     restart: unless-stopped
 
   api:
