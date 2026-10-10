@@ -21,6 +21,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     build.add_argument("--output-dir", type=Path, default=Path("data") / "synthetic")
     build.add_argument("--rows", type=int)
     build.add_argument("--seed", type=int)
+    commands.add_parser("train", help="Fit/evaluate then register a challenger in MLflow")
     verify = commands.add_parser("data-verify", help="Verify hashes and schema in data directory")
     verify.add_argument("--data-dir", type=Path, required=True)
     arguments = parser.parse_args(argv)
@@ -35,6 +36,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     settings = AppSettings()
+    if arguments.command == "train":
+        from mlp.train.pipeline import train_and_register
+
+        report = train_and_register(settings)
+        print(json.dumps(report, indent=2, sort_keys=True))
+        return 0
     if arguments.command == "data-build":
         from mlp.data.pipeline import build_data
 

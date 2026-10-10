@@ -44,6 +44,7 @@ def main() -> None:
         "docker-build",
         "clean",
         "doctor",
+        "train",
     }
     task = sys.argv[1] if len(sys.argv) == 2 else ""
     if task not in tasks:
@@ -64,6 +65,8 @@ def main() -> None:
         call("mypy", "src/mlp")
     elif task in {"test", "test-fast"}:
         call(sys.executable, "-m", "pytest", "-m", "not slow and not gpu")
+    elif task == "train":
+        call(sys.executable, "-m", "mlp", "train")
     elif task in {"run", "doctor"}:
         call(sys.executable, "-m", "mlp", "doctor")
     elif task == "clean":
