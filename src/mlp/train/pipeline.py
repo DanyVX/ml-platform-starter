@@ -5,12 +5,12 @@ from __future__ import annotations
 import json
 import os
 import platform
-from time import perf_counter
-
-import joblib
 import tempfile
 from pathlib import Path
+from time import perf_counter
 from typing import Any
+
+import joblib
 
 import mlflow
 import mlflow.sklearn

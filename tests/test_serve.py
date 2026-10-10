@@ -47,7 +47,6 @@ def test_predictions_single_batch_and_schema(monkeypatch) -> None:
 
 
 def test_cache_tamper_refused(tmp_path) -> None:
-    import numpy as np
     from sklearn.dummy import DummyClassifier
 
     manager = ModelManager(cache=tmp_path)

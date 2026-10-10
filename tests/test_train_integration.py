@@ -2,17 +2,12 @@
 
 from __future__ import annotations
 
-import os
-
-import mlflow
-import pytest
 from mlflow import MlflowClient
 
 from mlp.common.config import AppSettings
 from mlp.train.pipeline import MODEL_NAME, train_and_register
 
 
-@pytest.mark.slow
 def test_train_and_register(tmp_path, monkeypatch) -> None:
     tracking = (tmp_path / "tracking.db").as_posix()
     monkeypatch.setenv("MLP_TRACKING_URI", f"sqlite:///{tracking}")

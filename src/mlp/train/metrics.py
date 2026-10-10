@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pandas as pd
 from sklearn.metrics import average_precision_score, brier_score_loss, roc_auc_score
 
 
@@ -31,7 +32,7 @@ def evaluate_binary(y: np.ndarray, scores: np.ndarray) -> dict[str, float]:
     }
 
 
-def slice_ap(frame, scores: np.ndarray) -> dict[str, float]:
+def slice_ap(frame: pd.DataFrame, scores: np.ndarray) -> dict[str, float]:
     result = {}
     for channel, subset in frame.groupby("channel", sort=True):
         labels = subset["target"].to_numpy()

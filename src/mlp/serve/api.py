@@ -129,7 +129,7 @@ async def predict(payload: PredictRequest, request: Request) -> dict[str, Any]:
             )
         if not np.isfinite(scores).all() or (scores < 0).any() or (scores > 1).any():
             raise ValueError("Model produced invalid scores")
-    except (ValueError, asyncio.TimeoutError, RuntimeError) as exc:
+    except (ValueError, TimeoutError, RuntimeError) as exc:
         REQUESTS.labels(route, "error").inc()
         if route == "challenger" and GUARD.observe(Observation(True, 0, 0)):
             LOG.error("canary_auto_rollback")

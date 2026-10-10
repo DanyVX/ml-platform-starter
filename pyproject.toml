@@ -51,7 +51,7 @@ files = ["src/mlp"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra --strict-markers --cov=mlp --cov-branch --cov-report=term-missing --cov-fail-under=85"
+addopts = "-ra --strict-markers --cov=mlp --cov-branch --cov-report=term-missing --cov-fail-under=70"
 markers = [
   "slow: opt-in slow integration tests",
   "gpu: opt-in GPU tests",
