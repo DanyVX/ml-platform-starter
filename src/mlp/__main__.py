@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 from collections.abc import Sequence
+from pathlib import Path
 
 from mlp.common.config import AppSettings
 from mlp.common.environment import environment_report
