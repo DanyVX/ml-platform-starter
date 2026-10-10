@@ -1,0 +1,63 @@
+name: Compose end-to-end smoke
+
+concurrency:
+  group: workflow-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+on:
+  push:
+    branches: [m8-release-evidence]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and launch the single-node stack
+        run: docker compose -f deploy/docker-compose.yml up -d --build
+      - name: Train and register champion
+        run: docker compose -f deploy/docker-compose.yml exec -T api python -m mlp train
+      - name: Promote initial challenger through explicit gate
+        run: docker compose -f deploy/docker-compose.yml exec -T api python scripts/promote.py
+      - name: Poll hot reload and call inference
+        run: |
+          python - <<'PY'
+          import json
+          import time
+          import urllib.request
+          from urllib.error import HTTPError
+
+          base = "http://127.0.0.1:8000"
+          for _ in range(90):
+              try:
+                  with urllib.request.urlopen(base + "/readyz", timeout=3) as r:
+                      if json.load(r).get("status") in {"ready", "degraded"}:
+                          break
+              except (OSError, HTTPError):
+                  pass
+              time.sleep(2)
+          else:
+              raise SystemExit("Serving failed to load champion")
+          features = {f"f_{i}": 0.1 for i in range(6)}
+          payload = json.dumps({"records": {**features, "channel": "web"}}).encode()
+          request = urllib.request.Request(
+              base + "/v1/predict", payload,
+              {"Content-Type": "application/json"}, method="POST",
+          )
+          with urllib.request.urlopen(request, timeout=10) as r:
+              response = json.load(r)
+          assert len(response["scores"]) == 1
+          assert 0 <= response["scores"][0] <= 1
+          print("End-to-end model registered and served a validated prediction")
+          PY
+      - name: Drift injection measurement
+        run: docker compose -f deploy/docker-compose.yml exec -T api python eval/drift_injection.py
+      - name: Container logs on failure
+        if: failure()
+        run: docker compose -f deploy/docker-compose.yml logs --no-color --tail=200
+      - name: Tear down without retaining user data
+        if: always()
+        run: docker compose -f deploy/docker-compose.yml down -v

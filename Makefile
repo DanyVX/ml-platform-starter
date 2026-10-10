@@ -1,4 +1,4 @@
-.PHONY: setup lint format typecheck test test-fast bench run docker-build clean doctor
+.PHONY: setup lint format typecheck test test-fast bench run docker-build clean doctor up down demo rollback
 
 setup:
 	python scripts/tasks.py setup
@@ -36,3 +36,15 @@ doctor:
 .PHONY: train
 train:
 	python scripts/tasks.py train
+
+up:
+	python scripts/tasks.py up
+
+down:
+	python scripts/tasks.py down
+
+demo:
+	python scripts/tasks.py demo
+
+rollback:
+	MLP_ROLLBACK_VERSION=$(VERSION) python scripts/tasks.py rollback

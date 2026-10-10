@@ -37,3 +37,11 @@ The six-feature synthetic fixture is CPU-generated with an intentionally imbalan
 ## M2 training decision (2026-10-10)
 
 A deterministic logistic regression pipeline with train-only scaling and one-hot encoding is tuned by three-fold stratified cross-validation on training rows. Independent validation and test partitions are scored. Calibration is measured as ECE/Brier; calibration *correction* is deferred to a separate evaluation step to avoid tuning on holdout. Run metadata, test/slice metrics, data hashes, and a generated model card are logged before registration; registry aliases change only after evaluation succeeds. Model deserialization uses MLflow's pickle-based sklearn flavor, permitted **only from this controlled trusted registry**. Inference on untrusted artifacts is prohibited.
+
+## M3 serving (2026-10-10)
+
+The FastAPI service loads its champion registry alias and polls for version changes. Smoke-validation happens before the immutable snapshot is swapped under a thread lock. Requests pin a snapshot for their duration. If registry access fails on cold start, only a hash-checked last-known-good local cache may enable degraded readiness. No model means HTTP 503. The local cache contains trusted joblib data and must remain in a protected volume: joblib/pickle is unsafe for adversarial artifact ingestion. Limits include 128 records/batch, validated schema and a bounded prediction timeout. A further production hardening step would use signed artifacts and an isolated sandbox.
+
+## M4–M7 completion decisions (2026-10-10)
+
+The canary guard hashes per-request correlation identifiers for sticky routing; for *user-sticky* routing callers must supply a privacy-safe stable request key, and untrusted personal identifiers must not be used directly. Canary rollback sets local routing percentage to zero and alerts. Future multi-instance coordinated rollback needs an operator/registry controller. Drift uses explicit PSI+KS with a minimum observation window. CI promotion blocks any comparison of different data_version hashes and requires an aligned paired bootstrap. Docker Compose binds ports to loopback; deployment beyond a trusted developer machine needs authentication and TLS.

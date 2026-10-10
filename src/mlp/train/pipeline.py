@@ -7,8 +7,10 @@ import os
 import platform
 import tempfile
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 
+import joblib
 import mlflow
 import mlflow.sklearn
 import numpy as np
@@ -76,6 +78,15 @@ def train_and_register(settings: AppSettings | None = None) -> dict[str, Any]:
     final = evaluate_binary(parts.test["target"].to_numpy(), test_scores)
     slices = slice_ap(parts.test, test_scores)
     manifest = build_manifest(dataset, parts, seed=cfg.random_seed)
+    with tempfile.TemporaryDirectory() as measured_dir:
+        artifact_path = Path(measured_dir) / "sized.joblib"
+        joblib.dump(model, artifact_path)
+        model_bytes = artifact_path.stat().st_size
+    latency_samples = []
+    for _ in range(20):
+        started = perf_counter()
+        model.predict_proba(parts.test[x_cols])
+        latency_samples.append((perf_counter() - started) * 1000)
     mlflow.set_tracking_uri(os.getenv("MLP_TRACKING_URI", "sqlite:///mlflow.db"))
     mlflow.set_experiment("synthetic-churn-pilot")
     with mlflow.start_run(
@@ -103,6 +114,18 @@ def train_and_register(settings: AppSettings | None = None) -> dict[str, Any]:
                 json.dumps(report, indent=2), encoding="utf-8"
             )
             mlflow.log_artifact(str(Path(temporary) / "evaluation.json"))
+            holdout = {
+                "data_version": manifest["data_version"],
+                "labels": parts.test["target"].astype(int).tolist(),
+                "scores": test_scores.tolist(),
+                "worst_slice": min(slices.values()) if slices else 0.0,
+                "ece": final["ece"],
+                "latency_p95_ms": float(np.percentile(latency_samples, 95)),
+                "model_bytes": model_bytes,
+                "smoke": bool(np.isfinite(test_scores).all()),
+            }
+            (Path(temporary) / "holdout.json").write_text(json.dumps(holdout), encoding="utf-8")
+            mlflow.log_artifact(str(Path(temporary) / "holdout.json"))
             (Path(temporary) / "MODEL_CARD.md").write_text(
                 "# Synthetic model card\n\nFor synthetic MLOps infrastructure testing only. "
                 "No demonstrated real-world accuracy, safety, or subgroup fairness.\n\n"
@@ -132,8 +155,4 @@ def train_and_register(settings: AppSettings | None = None) -> dict[str, Any]:
         MODEL_NAME, version, "training_commit", str(manifest["git_commit"])
     )
     client.set_registered_model_alias(MODEL_NAME, "challenger", version)
-    try:
-        client.get_model_version_by_alias(MODEL_NAME, "champion")
-    except mlflow.exceptions.MlflowException:
-        client.set_registered_model_alias(MODEL_NAME, "champion", version)
     return {**report, "version": version, "model_name": MODEL_NAME}

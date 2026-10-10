@@ -1,22 +1,14 @@
-# Results and reproducibility
+# Results
 
-M0 establishes the harness only. No benchmark, drift, reliability, or serving experiment has been executed.
+The project enforces an honest-numbers policy. Only a script-produced measurement artifact counts as a result.
 
-| Metric | Measurement | Evidence |
-|---|---|---|
-| PR-AUC | TBD (not yet measured) | M2 |
-| Calibration / ECE | TBD (not yet measured) | M2 |
-| Worst-slice quality | TBD (not yet measured) | M2 |
-| Inference latency | TBD (not yet measured) | M3 |
-| Hot-reload race errors | TBD (not yet measured) | M3 |
-| Canary failure/rollback | TBD (not yet measured) | M4 |
-| Drift detection / false alarms | TBD (not yet measured) | M5 |
-| Gate accept + reject | TBD (not yet measured) | M6 |
+| Evidence | Current status |
+|---|---|
+| Training PR-AUC, Brier, ECE, slices | MLflow run artifact emitted by training command; no committed report yet |
+| Drift injection detection/false-alarm rates | Generate using `python eval/drift_injection.py`; no report committed yet |
+| Smoke serving / reload race | CI acceptance pending |
+| Canary auto-rollback | Deterministic behavior tests, not a sustained live load result |
+| Promotion gate accept/reject | Deterministic paired-bootstrap tests, not a production promotion |
+| One-command Docker Compose | Local reproduction instructions, CI verification pending |
 
-Future artifacts must live under results/*.json, be emitted by scripts in bench/ or eval/, include OS, CPU/GPU, RAM, package versions, data hash, seed and git commit, and be rendered into README by another script. Negative results will be retained.
-
-Environment probe (M0) can be reproduced with:
-
-    python -m mlp doctor --json
-
-Probe output is diagnostic metadata, not a benchmark result.
+Reports under `results/*.json` should contain measured values, hardware metadata, git commit, seed, environment versions and methodology. Failures must be retained as negative evidence, not deleted to improve the narrative.
