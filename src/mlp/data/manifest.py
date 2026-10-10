@@ -17,7 +17,10 @@ from mlp.data.split import DataSplits
 
 
 def canonical_csv(frame: pd.DataFrame) -> str:
-    return frame.to_csv(index=False, float_format="%.12g", lineterminator="\n")
+    csv_text = frame.to_csv(index=False, float_format="%.12g", lineterminator="\\n")
+    if not isinstance(csv_text, str):
+        raise TypeError("Expected an in-memory CSV string")
+    return csv_text
 
 
 def sha256_text(value: str) -> str:
