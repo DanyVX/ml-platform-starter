@@ -15,7 +15,7 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import Response
 from pandera.errors import SchemaError, SchemaErrors
-from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram, generate_latest
 from pydantic import BaseModel
 
 from mlp.data.schema import validate_frame
@@ -30,6 +30,7 @@ SHADOW = os.getenv("MLP_SHADOW_MODE", "false").lower() == "true"
 LOG = logging.getLogger("mlp.serve")
 REQUESTS = Counter("mlp_prediction_requests_total", "Prediction requests", ["route", "status"])
 LATENCY = Histogram("mlp_prediction_latency_seconds", "Inference latency", ["route"])
+MODEL_INFO = Gauge("mlp_model_version", "Active champion registry version", ["alias"])
 SHADOW_DELTA = Histogram(
     "mlp_shadow_prediction_delta", "Absolute champion-challenger probability difference",
     buckets=(0.01, 0.05, 0.1, 0.2, 0.5, 1.0),
@@ -198,6 +199,10 @@ async def predict(payload: PredictRequest, request: Request) -> dict[str, Any]:
 
 @app.get("/metrics")
 def metrics() -> Response:
+    loaded = manager.snapshot()
+    if loaded is not None:
+        MODEL_INFO.labels("champion").set(int(loaded.version))
+    runtime.report()
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
