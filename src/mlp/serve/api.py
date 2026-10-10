@@ -32,7 +32,8 @@ REQUESTS = Counter("mlp_prediction_requests_total", "Prediction requests", ["rou
 LATENCY = Histogram("mlp_prediction_latency_seconds", "Inference latency", ["route"])
 MODEL_INFO = Gauge("mlp_model_version", "Active champion registry version", ["alias"])
 SHADOW_DELTA = Histogram(
-    "mlp_shadow_prediction_delta", "Absolute champion-challenger probability difference",
+    "mlp_shadow_prediction_delta",
+    "Absolute champion-challenger probability difference",
     buckets=(0.01, 0.05, 0.1, 0.2, 0.5, 1.0),
 )
 
@@ -77,7 +78,7 @@ async def correlation_id(
     if not rid.isascii() or len(rid) > 64 or not rid:
         rid = uuid.uuid4().hex
     request.state.request_id = rid
-    routing_key = request.headers.get('X-Routing-Key', '')
+    routing_key = request.headers.get("X-Routing-Key", '')
     request.state.routing_key = (
         routing_key if routing_key.isascii() and 0 < len(routing_key) <= 128 else rid
     )
@@ -120,7 +121,7 @@ async def predict(payload: PredictRequest, request: Request) -> dict[str, Any]:
         raise HTTPException(422, "Batch must contain 1 to 128 rows")
     champion = manager.snapshot()
     if champion is None:
-        raise HTTPException(503, 'No verified champion model is loaded')
+        raise HTTPException(503, "No verified champion model is loaded")
     route = GUARD.route(request.state.routing_key)
     challenger = CHALLENGER.snapshot()
     if route == "challenger" and challenger is None:
