@@ -19,3 +19,12 @@ Runtime: pydantic-settings (MIT), pydantic (MIT), pandas (BSD-3-Clause), NumPy (
 ## Data handling
 
 No raw production input retention. Only synthetic smoke data may be generated during tests. No data or weights committed to git. M1 generates content-hash manifests alongside disposable CSV outputs; future data deletion and artifact retention must be documented before deployment.
+
+## Platform library and image license notes (M2–M8)
+
+- MLflow: Apache-2.0 (upstream mlflow/mlflow).
+- Pandera: MIT (upstream unionai-oss/pandera).
+- **Grafana OSS Docker image: AGPL-3.0-only**, independently deployed, unmodified. Read its upstream LICENSING.md and check obligations before redistributing or adapting.
+- Prometheus and the FastAPI/scikit-learn ecosystem: review pinned binary/wheel metadata before any distributable release; transitive licenses are not implied by this summary.
+
+No external training dataset or pretrained model is shipped. Synthetic fixture creation depends only on the pinned scikit-learn generator and seed.

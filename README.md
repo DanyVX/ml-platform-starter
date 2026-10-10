@@ -123,6 +123,8 @@ Items M2-M8 must only be checked after their merged PR and CI evidence confirms 
 
 ## License
 
+**License notice: Grafana OSS is AGPL-3.0-only** and runs as a separate, unmodified Docker image in the optional observability stack. The project source remains MIT; integrating or modifying/distributing Grafana has separate obligations. See the upstream Grafana LICENSING.md before distribution. MLflow uses Apache-2.0, Pandera MIT.
+
 MIT for project source. See [LICENSE](LICENSE), [DATA](DATA.md), and [MODEL_CARD](MODEL_CARD.md). Upstream licenses must be reviewed and updated for each dependency.
 
 ## Acknowledgements
