@@ -18,6 +18,7 @@ from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_
 from pydantic import BaseModel
 
 from mlp.data.schema import validate_frame
+from mlp.monitor.runtime import runtime
 from mlp.serve.manager import CACHE, ModelManager, manager
 from mlp.serve.routing import CanaryGuard, Observation
 
@@ -138,6 +139,7 @@ async def predict(payload: PredictRequest, request: Request) -> dict[str, Any]:
             LOG.error("canary_auto_rollback")
         LOG.exception("prediction_failed")
         raise HTTPException(status_code=503, detail="Model prediction failed") from exc
+    runtime.observe(frame, scores)
     REQUESTS.labels(route, "ok").inc()
     if route == "challenger":
         elapsed_ms = (perf_counter() - started) * 1000
@@ -154,8 +156,13 @@ async def predict(payload: PredictRequest, request: Request) -> dict[str, Any]:
                 LOG.warning("shadow_predict_failed")
 
         asyncio.create_task(score_shadow())
+    prediction_ids = [uuid.uuid4().hex for _ in scores]
+    if os.getenv("MLP_ENABLE_DELAYED_FEEDBACK", "false").lower() == "true":
+        for prediction_id, score in zip(prediction_ids, scores, strict=True):
+            runtime.feedback.add_prediction(prediction_id, float(score))
     return {
-        "prediction_id": uuid.uuid4().hex,
+        "prediction_id": prediction_ids[0],
+        "prediction_ids": prediction_ids,
         "version": loaded.version,
         "route": route,
         "scores": [float(x) for x in scores],
@@ -165,3 +172,35 @@ async def predict(payload: PredictRequest, request: Request) -> dict[str, Any]:
 @app.get("/metrics")
 def metrics() -> Response:
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+
+class LabelFeedback(BaseModel):
+    prediction_id: str
+    target: int
+
+
+@app.post("/v1/feedback")
+def delayed_feedback(payload: LabelFeedback) -> dict[str, bool]:
+    if os.getenv("MLP_ENABLE_DELAYED_FEEDBACK", "false").lower() != "true":
+        raise HTTPException(403, "Delayed feedback is disabled")
+    if payload.target not in (0, 1):
+        raise HTTPException(422, "Binary label required")
+    if not runtime.feedback.add_label(payload.prediction_id, payload.target):
+        raise HTTPException(404, "Prediction ID expired or unknown")
+    return {"accepted": True}
+
+
+@app.delete("/v1/predictions/{prediction_id}")
+def erase_prediction(prediction_id: str) -> dict[str, bool]:
+    runtime.feedback.erase(prediction_id)
+    return {"erased": True}
+
+
+@app.get("/v1/performance")
+def delayed_performance() -> dict[str, str | int | float]:
+    return runtime.feedback.performance()
+
+
+@app.get("/v1/drift")
+def live_drift() -> dict[str, dict]:
+    return runtime.report()
