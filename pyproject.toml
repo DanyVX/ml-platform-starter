@@ -13,6 +13,7 @@ dependencies = [
   "pandas==2.3.3",
   "scikit-learn==1.8.0",
   "pandera[pandas]==0.34.1",
+  "mlflow==3.17.0",
 ]
 
 [project.optional-dependencies]
@@ -53,5 +54,5 @@ markers = [
 ]
 
 [[tool.mypy.overrides]]
-module = ["numpy.*", "pandas.*", "sklearn.*", "pandera.*"]
+module = ["numpy.*", "pandas.*", "sklearn.*", "pandera.*", "mlflow.*"]
 ignore_missing_imports = true

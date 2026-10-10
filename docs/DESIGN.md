@@ -33,3 +33,7 @@ Every milestone is a separate PR. Commits represent one logical change. Logs mus
 ## M1 implementation notes (2026-10-10)
 
 The six-feature synthetic fixture is CPU-generated with an intentionally imbalanced binary label and a bounded synthetic channel. Strict Pandera schemas are shared between training and planned serving calls. M1 rejects unknown categories rather than silently changing model input dimensions; a later serving milestone can implement an explicit unknown-bucket counter. Dataset manifests use canonical CSV SHA-256, a schema fingerprint, split row counts and library versions. No normalization is fitted at data-generation time: scalers and encoders must be fitted on training rows only in M2.
+
+## M2 training decision (2026-10-10)
+
+A deterministic logistic regression pipeline with train-only scaling and one-hot encoding is tuned by three-fold stratified cross-validation on training rows. Independent validation and test partitions are scored. Calibration is measured as ECE/Brier; calibration *correction* is deferred to a separate evaluation step to avoid tuning on holdout. Run metadata, test/slice metrics, data hashes, and a generated model card are logged before registration; registry aliases change only after evaluation succeeds. Model deserialization uses MLflow's pickle-based sklearn flavor, permitted **only from this controlled trusted registry**. Inference on untrusted artifacts is prohibited.

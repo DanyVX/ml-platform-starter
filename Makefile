@@ -32,3 +32,7 @@ clean:
 
 doctor:
 	python scripts/tasks.py doctor
+
+.PHONY: train
+train:
+	python scripts/tasks.py train
