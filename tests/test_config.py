@@ -8,8 +8,13 @@ from mlp.common.config import AppSettings
 
 def test_defaults_are_cpu_friendly(monkeypatch: pytest.MonkeyPatch) -> None:
     for name in (
-        "MLP_ENVIRONMENT", "MLP_LOG_LEVEL", "MLP_LOG_JSON", "MLP_RANDOM_SEED",
-        "MLP_TINY_ROWS", "MLP_VALIDATION_FRACTION", "MLP_TEST_FRACTION",
+        "MLP_ENVIRONMENT",
+        "MLP_LOG_LEVEL",
+        "MLP_LOG_JSON",
+        "MLP_RANDOM_SEED",
+        "MLP_TINY_ROWS",
+        "MLP_VALIDATION_FRACTION",
+        "MLP_TEST_FRACTION",
     ):
         monkeypatch.delenv(name, raising=False)
     settings = AppSettings(_env_file=None)
@@ -51,6 +56,11 @@ def test_env_overrides_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_public_configuration_has_explicit_allowlist() -> None:
     result = AppSettings(_env_file=None).public_config()
     assert set(result) == {
-        "environment", "log_level", "log_json", "random_seed", "tiny_rows",
-        "validation_fraction", "test_fraction",
+        "environment",
+        "log_level",
+        "log_json",
+        "random_seed",
+        "tiny_rows",
+        "validation_fraction",
+        "test_fraction",
     }

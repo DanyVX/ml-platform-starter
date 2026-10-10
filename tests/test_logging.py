@@ -25,9 +25,7 @@ def test_json_log_with_correlation_id() -> None:
 
 
 def test_unapproved_record_extras_are_not_logged() -> None:
-    record = logging.LogRecord(
-        "mlp", logging.INFO, __file__, 1, "request_accepted", (), None
-    )
+    record = logging.LogRecord("mlp", logging.INFO, __file__, 1, "request_accepted", (), None)
     record.private_image = "sensitive-content"
     message = JSONFormatter().format(record)
     assert "sensitive-content" not in message

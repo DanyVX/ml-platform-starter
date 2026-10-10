@@ -7,9 +7,7 @@ import json
 import logging
 from datetime import UTC, datetime
 
-request_id: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-    "request_id", default=None
-)
+request_id: contextvars.ContextVar[str | None] = contextvars.ContextVar("request_id", default=None)
 
 
 class JSONFormatter(logging.Formatter):
@@ -35,6 +33,8 @@ def configure_logging(level: str = "INFO", as_json: bool = False) -> logging.Log
     logger.propagate = False
     logger.handlers.clear()
     handler = logging.StreamHandler()
-    handler.setFormatter(JSONFormatter() if as_json else logging.Formatter("%(levelname)s %(message)s"))
+    handler.setFormatter(
+        JSONFormatter() if as_json else logging.Formatter("%(levelname)s %(message)s")
+    )
     logger.addHandler(handler)
     return logger

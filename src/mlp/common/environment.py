@@ -40,9 +40,7 @@ def _version(package: str) -> str | None:
 def environment_report() -> dict[str, str | int | bool | None]:
     """Capture local runner properties; an absent probe means unknown, not unsupported."""
     cuda_probe = _command_output("nvcc", "--version")
-    gpu_probe = _command_output(
-        "nvidia-smi", "--query-gpu=name", "--format=csv,noheader"
-    )
+    gpu_probe = _command_output("nvidia-smi", "--query-gpu=name", "--format=csv,noheader")
     return {
         "os": platform.platform(),
         "shell": os.environ.get("SHELL") or os.environ.get("COMSPEC"),

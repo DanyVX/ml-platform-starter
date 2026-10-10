@@ -33,8 +33,17 @@ def clean() -> None:
 
 def main() -> None:
     tasks = {
-        "setup", "lint", "format", "typecheck", "test", "test-fast", "bench",
-        "run", "docker-build", "clean", "doctor",
+        "setup",
+        "lint",
+        "format",
+        "typecheck",
+        "test",
+        "test-fast",
+        "bench",
+        "run",
+        "docker-build",
+        "clean",
+        "doctor",
     }
     task = sys.argv[1] if len(sys.argv) == 2 else ""
     if task not in tasks:
