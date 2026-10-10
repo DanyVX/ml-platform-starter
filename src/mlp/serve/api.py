@@ -202,5 +202,5 @@ def delayed_performance() -> dict[str, str | int | float]:
 
 
 @app.get("/v1/drift")
-def live_drift() -> dict[str, dict]:
+def live_drift() -> dict[str, dict[str, object]]:
     return runtime.report()

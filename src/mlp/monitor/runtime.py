@@ -43,10 +43,10 @@ class DriftRuntime:
         for score in scores:
             PREDICTED_SCORE.observe(float(score))
 
-    def report(self) -> dict:
+    def report(self) -> dict[str, dict[str, object]]:
         with self._lock:
             snapshots = {name: np.array(values, dtype=float) for name, values in self.windows.items()}
-        result = {}
+        result: dict[str, dict[str, object]] = {}
         for name, values in snapshots.items():
             measured = detect_numeric(self.reference[name], values)
             result[name] = measured.as_dict()
