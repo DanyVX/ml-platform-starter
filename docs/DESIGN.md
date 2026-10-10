@@ -29,3 +29,7 @@ No model has been trained. Model claims, subgroup results and latency budgets ar
 ## Working conventions
 
 Every milestone is a separate PR. Commits represent one logical change. Logs must avoid secrets, raw PII, biometrics and embeddings. Real identity documents never enter fixtures. Results belong in JSON artifacts with environment + revision metadata. Model deserialization from untrusted files is forbidden. SQLite/MLflow/serving ports must not be exposed publicly without authentication and TLS.
+
+## M1 implementation notes (2026-10-10)
+
+The six-feature synthetic fixture is CPU-generated with an intentionally imbalanced binary label and a bounded synthetic channel. Strict Pandera schemas are shared between training and planned serving calls. M1 rejects unknown categories rather than silently changing model input dimensions; a later serving milestone can implement an explicit unknown-bucket counter. Dataset manifests use canonical CSV SHA-256, a schema fingerprint, split row counts and library versions. No normalization is fitted at data-generation time: scalers and encoders must be fitted on training rows only in M2.

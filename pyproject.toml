@@ -9,6 +9,10 @@ description = "CPU-first, single-node MLOps reference platform"
 requires-python = ">=3.11,<3.14"
 dependencies = [
   "pydantic-settings==2.14.2",
+  "numpy==2.3.5",
+  "pandas==2.3.3",
+  "scikit-learn==1.8.0",
+  "pandera[pandas]==0.34.1",
 ]
 
 [project.optional-dependencies]
@@ -47,3 +51,7 @@ markers = [
   "slow: opt-in slow integration tests",
   "gpu: opt-in GPU tests",
 ]
+
+[[tool.mypy.overrides]]
+module = ["numpy.*", "pandas.*", "sklearn.*", "pandera.*"]
+ignore_missing_imports = true
