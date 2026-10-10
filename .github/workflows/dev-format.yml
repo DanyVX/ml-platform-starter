@@ -1,0 +1,28 @@
+name: Temporary development formatter
+on:
+  push:
+    branches: [m8-release-evidence]
+permissions:
+  contents: write
+jobs:
+  autofix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: m8-release-evidence
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install "ruff==0.12.11"
+      - run: |
+          ruff check --fix .
+          ruff format .
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -u
+            git commit -m "style: apply deterministic Ruff formatting"
+            git push origin HEAD:m8-release-evidence
+          fi
