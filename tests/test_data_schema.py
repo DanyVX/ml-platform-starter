@@ -42,7 +42,9 @@ def test_serve_schema_excludes_target() -> None:
         validate_frame(training, training=False)
 
 
-@pytest.mark.parametrize("change", ["unknown", "string_number", "nan", "inf", "too_large", "null_channel"])
+@pytest.mark.parametrize(
+    "change", ["unknown", "string_number", "nan", "inf", "too_large", "null_channel"]
+)
 def test_invalid_input_rejected(change: str) -> None:
     frame = generate_synthetic(80, 11)
     if change == "unknown":
