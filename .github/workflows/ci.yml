@@ -35,7 +35,9 @@ jobs:
       - name: CPU smoke test
         run: python -m mlp doctor --json
       - name: Dependency audit
-        run: pip-audit --strict --skip-editable
+        run: |
+          python -m pip list --format=freeze --exclude-editable > audit-installed.txt
+          pip-audit --strict --no-deps -r audit-installed.txt
 
   secrets:
     name: secret scan
