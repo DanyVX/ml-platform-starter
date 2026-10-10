@@ -78,7 +78,9 @@ def train_and_register(settings: AppSettings | None = None) -> dict[str, Any]:
     manifest = build_manifest(dataset, parts, seed=cfg.random_seed)
     mlflow.set_tracking_uri(os.getenv("MLP_TRACKING_URI", "sqlite:///mlflow.db"))
     mlflow.set_experiment("synthetic-churn-pilot")
-    with mlflow.start_run(tags={"commit": str(manifest["git_commit"]), "data_sha256": manifest["data_version"]}) as run:
+    with mlflow.start_run(
+        tags={"commit": str(manifest["git_commit"]), "data_sha256": manifest["data_version"]}
+    ) as run:
         mlflow.log_params({"seed": cfg.random_seed, "rows": cfg.tiny_rows, **grid.best_params_})
         mlflow.log_metrics({f"val_{k}": v for k, v in validation.items()})
         mlflow.log_metrics({f"test_{k}": v for k, v in final.items()})
