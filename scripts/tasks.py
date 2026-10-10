@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import sys
@@ -45,6 +46,10 @@ def main() -> None:
         "clean",
         "doctor",
         "train",
+        "up",
+        "down",
+        "demo",
+        "rollback",
     }
     task = sys.argv[1] if len(sys.argv) == 2 else ""
     if task not in tasks:
@@ -83,9 +88,19 @@ def main() -> None:
     elif task == "clean":
         clean()
     elif task == "bench":
-        unsupported("Benchmark runner arrives in M2; no measured results are available yet.")
+        call(sys.executable, "eval/drift_injection.py")
     elif task == "docker-build":
-        unsupported("Dockerfile and container build arrive in M3/M7, not M0.")
+        call("docker", "build", "-t", "ml-platform-starter:local", ".")
+    elif task == "up":
+        call("docker", "compose", "-f", "deploy/docker-compose.yml", "up", "-d", "--build")
+    elif task == "down":
+        call("docker", "compose", "-f", "deploy/docker-compose.yml", "down")
+    elif task == "demo":
+        call(sys.executable, "scripts/demo.py")
+    elif task == "rollback":
+        if not os.environ.get("MLP_ROLLBACK_VERSION"):
+            unsupported("Set MLP_ROLLBACK_VERSION to an explicit previously healthy champion")
+        call(sys.executable, "scripts/rollback.py", os.environ["MLP_ROLLBACK_VERSION"])
 
 
 if __name__ == "__main__":
