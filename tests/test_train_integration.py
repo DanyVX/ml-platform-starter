@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import os
-
-import mlflow
 import pytest
 from mlflow import MlflowClient
 
