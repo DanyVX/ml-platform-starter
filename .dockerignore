@@ -1,0 +1,15 @@
+.git
+.github
+.venv
+__pycache__
+.pytest_cache
+.coverage
+.env
+data
+artifacts
+mlruns
+models
+results
+*.joblib
+*.sqlite
+*.db

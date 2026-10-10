@@ -1,0 +1,84 @@
+name: ml-platform-starter
+services:
+  mlflow:
+    build:
+      context: ..
+    command:
+      - mlflow
+      - server
+      - --host
+      - 0.0.0.0
+      - --port
+      - "5000"
+      - --backend-store-uri
+      - sqlite:////app/artifacts/mlflow.db
+      - --serve-artifacts
+      - --artifacts-destination
+      - /app/artifacts/mlflow
+    volumes:
+      - tracking:/app/artifacts
+    ports:
+      - "127.0.0.1:5000:5000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:5000/health',timeout=5)"]
+      interval: 15s
+      timeout: 8s
+      retries: 12
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ..
+    command: ["uvicorn", "mlp.serve.api:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      MLP_TRACKING_URI: http://mlflow:5000
+      MLP_CACHE_DIR: /app/artifacts/cache
+      MLP_RELOAD_INTERVAL: ${MLP_RELOAD_INTERVAL:-10}
+      MLP_CANARY_PERCENT: ${MLP_CANARY_PERCENT:-0}
+      MLP_SHADOW_MODE: ${MLP_SHADOW_MODE:-false}
+    volumes:
+      - cache:/app/artifacts
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/healthz',timeout=5)"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.retention.time=7d"]
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-local-demo-only-change-this}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - prometheus
+
+volumes:
+  tracking:
+  cache:
+  prometheus:
+  grafana:
