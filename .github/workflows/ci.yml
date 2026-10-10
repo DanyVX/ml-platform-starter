@@ -26,6 +26,7 @@ jobs:
       - name: Lint and format check
         run: |
           ruff check .
+          ruff format --diff . || true
           ruff format --check .
       - name: Strict type checking
         run: mypy src/mlp
