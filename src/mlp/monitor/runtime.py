@@ -19,7 +19,8 @@ from mlp.monitor.feedback import FeedbackWindow
 DRIFT_PSI = Gauge("mlp_feature_psi", "Numeric feature PSI", ["feature"])
 DRIFT_FLAG = Gauge("mlp_drift_alert", "Numeric drift alert", ["feature"])
 PREDICTED_SCORE = Histogram(
-    "mlp_prediction_score", "Predicted positive score",
+    "mlp_prediction_score",
+    "Predicted positive score",
     buckets=(0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 1.0),
 )
 
@@ -28,9 +29,7 @@ class DriftRuntime:
     def __init__(self, limit: int = 400, seed: int = 42, rows: int = 200) -> None:
         reference = generate_synthetic(rows, seed)
         self.reference = {name: reference[name].to_numpy() for name in FEATURES}
-        self.windows: dict[str, deque[float]] = {
-            name: deque(maxlen=limit) for name in FEATURES
-        }
+        self.windows: dict[str, deque[float]] = {name: deque(maxlen=limit) for name in FEATURES}
         self._lock = threading.Lock()
         self.feedback = FeedbackWindow()
 
@@ -45,7 +44,9 @@ class DriftRuntime:
 
     def report(self) -> dict[str, dict[str, object]]:
         with self._lock:
-            snapshots = {name: np.array(values, dtype=float) for name, values in self.windows.items()}
+            snapshots = {
+                name: np.array(values, dtype=float) for name, values in self.windows.items()
+            }
         result: dict[str, dict[str, object]] = {}
         for name, values in snapshots.items():
             measured = detect_numeric(self.reference[name], values)
