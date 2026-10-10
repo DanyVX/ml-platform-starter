@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import Response
+from pandera.errors import SchemaError, SchemaErrors
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 from pydantic import BaseModel
 
@@ -29,6 +30,10 @@ SHADOW = os.getenv("MLP_SHADOW_MODE", "false").lower() == "true"
 LOG = logging.getLogger("mlp.serve")
 REQUESTS = Counter("mlp_prediction_requests_total", "Prediction requests", ["route", "status"])
 LATENCY = Histogram("mlp_prediction_latency_seconds", "Inference latency", ["route"])
+SHADOW_DELTA = Histogram(
+    "mlp_shadow_prediction_delta", "Absolute champion-challenger probability difference",
+    buckets=(0.01, 0.05, 0.1, 0.2, 0.5, 1.0),
+)
 
 
 class PredictRequest(BaseModel):
@@ -71,6 +76,8 @@ async def correlation_id(
     if not rid.isascii() or len(rid) > 64 or not rid:
         rid = uuid.uuid4().hex
     request.state.request_id = rid
+    routing_key = request.headers.get('X-Routing-Key', '')
+    request.state.routing_key = routing_key if routing_key.isascii() and 0 < len(routing_key) <= 128 else rid
     response = await call_next(request)
     response.headers["X-Request-ID"] = rid
     return response
@@ -109,9 +116,15 @@ async def predict(payload: PredictRequest, request: Request) -> dict[str, Any]:
     if not 1 <= len(records) <= 128:
         raise HTTPException(422, "Batch must contain 1 to 128 rows")
     champion = manager.snapshot()
-    route = GUARD.route(request.state.request_id)
+    if champion is None:
+        raise HTTPException(503, 'No verified champion model is loaded')
+    route = GUARD.route(request.state.routing_key)
     challenger = CHALLENGER.snapshot()
-    loaded = challenger if route == "challenger" and challenger is not None else champion
+    if route == "challenger" and challenger is None:
+        GUARD.reset(0)
+        LOG.warning("challenger_unavailable_canary_disabled")
+        route = "champion"
+    loaded = challenger if route == "challenger" else champion
     if loaded is None:
         raise HTTPException(503, "No verified model is loaded")
     try:
@@ -119,8 +132,8 @@ async def predict(payload: PredictRequest, request: Request) -> dict[str, Any]:
     except (ValueError, TypeError) as exc:
         REQUESTS.labels(route, "invalid").inc()
         raise HTTPException(status_code=422, detail="Invalid input schema") from exc
-    except Exception as exc:
-        REQUESTS.labels("champion", "invalid").inc()
+    except (SchemaError, SchemaErrors) as exc:
+        REQUESTS.labels(route, "invalid").inc()
         raise HTTPException(status_code=422, detail="Input validation failed") from exc
     try:
         from time import perf_counter
@@ -143,13 +156,25 @@ async def predict(payload: PredictRequest, request: Request) -> dict[str, Any]:
     REQUESTS.labels(route, "ok").inc()
     if route == "challenger":
         elapsed_ms = (perf_counter() - started) * 1000
-        if GUARD.observe(Observation(False, elapsed_ms, 0)):
+        try:
+            champion_scores = await asyncio.to_thread(
+                lambda: champion.model.predict_proba(frame)[:, 1]
+            )
+            divergence = float(np.mean(np.abs(scores - champion_scores)))
+        except (ValueError, RuntimeError):
+            divergence = 1.0
+            LOG.warning("champion_comparison_failed")
+        if GUARD.observe(Observation(False, elapsed_ms, divergence)):
             LOG.error("canary_auto_rollback")
     elif SHADOW and challenger is not None:
         # Deliberately never return or persist the shadow result.
         async def score_shadow() -> None:
             try:
-                await asyncio.to_thread(challenger.model.predict_proba, frame)
+                shadow_scores = await asyncio.to_thread(
+                    lambda: challenger.model.predict_proba(frame)[:, 1]
+                )
+                delta = float(np.mean(np.abs(scores - shadow_scores)))
+                SHADOW_DELTA.observe(delta)
                 REQUESTS.labels("shadow", "ok").inc()
             except (ValueError, RuntimeError):
                 REQUESTS.labels("shadow", "error").inc()
