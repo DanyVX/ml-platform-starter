@@ -67,7 +67,9 @@ def main() -> None:
         call(sys.executable, "-m", "pytest", "-m", "not slow and not gpu")
     elif task == "train":
         call(sys.executable, "-m", "mlp", "train")
-    elif task in {"run", "doctor"}:
+    elif task == "run":
+        call(sys.executable, "-m", "uvicorn", "mlp.serve.api:app", "--host", "127.0.0.1", "--port", "8000")
+    elif task == "doctor":
         call(sys.executable, "-m", "mlp", "doctor")
     elif task == "clean":
         clean()
